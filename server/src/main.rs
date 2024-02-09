@@ -1,6 +1,6 @@
 use token::{
     token_server::{Token, TokenServer}, //TokenServer is auto-generated from the proto file and
-                                        //so is `token_server` module.
+    //so is `token_server` module.
     TokenRequest,
     TokenResponse,
 };
@@ -8,6 +8,9 @@ use tonic::{transport::Server, Request, Response, Status};
 
 pub mod token {
     tonic::include_proto!("token");
+
+    pub(crate) const FILE_DESCRIPTOR_SET: &[u8] =
+        tonic::include_file_descriptor_set!("token_descriptor");
 }
 
 #[derive(Debug, Default)]
@@ -23,7 +26,7 @@ impl Token for TokenService {
 
         let response = token::TokenResponse {
             token: "Hello, world!".into(),
-            error: "".into(),
+            error: "No error".into(),
         };
 
         Ok(Response::new(response))
@@ -33,10 +36,16 @@ impl Token for TokenService {
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let address = "[::1]:8080".parse().unwrap();
-    let voting_service = TokenService::default();
+    let token_service = TokenService::default();
+
+    let reflection = tonic_reflection::server::Builder::configure()
+        .register_encoded_file_descriptor_set(token::FILE_DESCRIPTOR_SET)
+        .build()
+        .unwrap();
 
     Server::builder()
-        .add_service(TokenServer::new(voting_service))
+        .add_service(reflection)
+        .add_service(TokenServer::new(token_service))
         .serve(address)
         .await?;
     Ok(())
