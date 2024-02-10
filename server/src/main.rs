@@ -25,7 +25,7 @@ impl Token for TokenService {
         println!("Got a request: {:?}", request);
 
         let response = token::TokenResponse {
-            token: "Hello, world!".into(),
+            tokens: tokenize(request.into_inner().token.as_str()),
             error: "No error".into(),
         };
 
@@ -49,4 +49,32 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .serve(address)
         .await?;
     Ok(())
+}
+
+fn tokenize(input: &str) -> Vec<String> {
+    //split into words
+    let words: Vec<&str> = input.split_whitespace().collect();
+
+    //convert to lowercase
+    let words: Vec<String> = words.iter().map(|word| word.to_lowercase()).collect();
+
+    //remove punctuation
+    let words: Vec<String> = words
+        .iter()
+        .map(|word| word.replace(|c: char| !c.is_alphanumeric(), ""))
+        .collect();
+
+    //remove stop words
+    let stop_words = vec![
+        "a", "an", "and", "are", "as", "at", "be", "by", "for", "from", "has", "he", "in", "is",
+        "it", "its", "of", "on", "that", "the", "to", "was", "were", "will", "with",
+    ];
+
+    let words: Vec<String> = words
+        .iter()
+        .filter(|word| !stop_words.contains(&word.as_str()))
+        .map(|word| word.to_string())
+        .collect();
+
+    return words;
 }

@@ -10,6 +10,6 @@ message TokenRequest {
 }
 
 message TokenResponse {
-	string token = 1;
+	repeated string tokens = 1;
 	string error = 2;
 }

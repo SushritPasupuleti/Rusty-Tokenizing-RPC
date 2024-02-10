@@ -1,6 +1,8 @@
-# RustyRPC
+# Rusty Tokenizing RPC
 
-A Rust based gRPC server using Tonic.
+A Rust based gRPC server using Tonic which exposes a Tokenizer that splits a string into words and returns the tokens.
+
+Useful when you have a pipeline that is constanly being hit with new data/requests, that can quickly overwhelm the throughput of the service due to poor GC performance of Python.
 
 ## Setup
 
