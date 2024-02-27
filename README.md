@@ -31,6 +31,16 @@ Use `evans` or `grpcurl` to interact with the server.
 evans -p proto/<proto_file>.proto -p 8080
 ```
 
+With `grpcurl`:
+
+with authentication:
+
 ```bash
-grpcurl -plaintext -d '{"name": "world"}' localhost:8080 <service>.<method>
+grpcurl -H "Authorization: Bearer <token>" -emit-defaults -plaintext -d '{"token": "Hello World!"}' localhost:8080 token.Token.ProcessToken
+```
+
+without authentication:
+
+```bash
+grpcurl -plaintext -d '{"token": "Hello World!"}' localhost:8080 token.Token.ProcessToken
 ```

@@ -6,6 +6,7 @@ mkShell rec {
   buildInputs = [
     protobuf3_20
 	protoc-gen-rust
+	protoc-gen-grpc-web
 	evans # grpc client
   ];
 }

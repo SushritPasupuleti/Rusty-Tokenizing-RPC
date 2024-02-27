@@ -4,7 +4,8 @@ use token::{
     TokenRequest,
     TokenResponse,
 };
-use tonic::{transport::Server, Request, Response, Status};
+
+use tonic::{metadata::MetadataValue, transport::Server, Request, Response, Status};
 
 pub mod token {
     tonic::include_proto!("token");
@@ -37,6 +38,7 @@ impl Token for TokenService {
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let address = "[::1]:8080".parse().unwrap();
     let token_service = TokenService::default();
+    let authenticated_token_service = TokenService::default();
 
     let reflection = tonic_reflection::server::Builder::configure()
         .register_encoded_file_descriptor_set(token::FILE_DESCRIPTOR_SET)
@@ -44,8 +46,15 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .unwrap();
 
     Server::builder()
+        .accept_http1(true) // <- Add grpc-web support
+        .layer(tower_http::cors::CorsLayer::permissive())
         .add_service(reflection)
-        .add_service(TokenServer::new(token_service))
+        // .add_service(TokenServer::new(token_service)) // <- unauthenticated | switch for testing
+        // .add_service(tonic_web::enable(TokenServer::new(token_service))) // <- grpc-web support + unauthenticated | switch for testing
+        .add_service(TokenServer::with_interceptor(
+            authenticated_token_service,
+            check_auth,
+        ))
         .serve(address)
         .await?;
     Ok(())
@@ -77,4 +86,22 @@ fn tokenize(input: &str) -> Vec<String> {
         .collect();
 
     return words;
+}
+
+fn check_auth(req: Request<()>) -> Result<Request<()>, Status> {
+    let req_token = req.metadata().get("authorization").unwrap();
+
+    let token_str = req_token.to_str().unwrap();
+
+    if token_str.starts_with("Bearer ") {
+        let token = token_str.trim_start_matches("Bearer ");
+        //TODO: check token against a database or something
+        if token == "mytoken" {
+            return Ok(req);
+        } else {
+            return Err(Status::unauthenticated("Invalid token"));
+        }
+    } else {
+        return Err(Status::unauthenticated("Invalid token"));
+    }
 }
